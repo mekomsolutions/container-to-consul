@@ -1,45 +1,39 @@
 # Container-to-Consul
 
-[![Build Status](https://travis-ci.org/vidiben/con-tainer2sul.svg?branch=master)](https://travis-ci.org/vidiben/con-tainer2sul) 
-[![codecov](https://codecov.io/gh/vidiben/con-tainer2sul/branch/master/graph/badge.svg)](https://codecov.io/gh/vidiben/con-tainer2sul)
+![Build Status](https://github.com/github/docs/actions/workflows/ci.yml/badge.svg)
 
-Con-tainer2sul automatically registers and deregisters nodes for any Docker container.
+Container-to-Consul automatically registers and deregisters containers as services in Consul.
 
-This project is inspired by [gliderlabs registrator](https://github.com/gliderlabs/registrator).
+This project is largely based on the original work done in [con-tainer2sul](https://github.com/benoitvidis/con-tainer2sul) by [Benoît Vidis](https://github.com/benoitvidis/). While this fork includes significant changes and improvements, we would like to acknowledge the foundation provided by the original project, without which this version would not have been possible.
 
-The main difference is that Con-tainer2sul will by default register the containers as nodes. This allows to register a container without having to expose any network service on the host.
+Please note that some files, variables, or other elements might still reference the original project name. These remnants will be updated over time as the project evolves, but their presence reflects the project's roots as con-tainer2sul.
 
 <!-- toc -->
 
-- [Running Con-tainer2sul](#running-con-tainer2sul)
-  * [Using Docker](#using-docker)
-  * [Configuration](#configuration)
-    + [Consul](#consul)
-    + [Docker](#docker)
-    + [Logger](#logger)
-- [Container registration](#container-registration)
-  * [IP Address](#ip-address)
-  * [Service name](#service-name)
-  * [Tags](#tags)
-  * [Skipping registration](#skipping-registration)
+- [Container-to-Consul](#container-to-consul)
+  - [Running Container-to-Consul from source](#running-container-to-consul-from-source)
+  - [Configuration](#configuration)
+      - [Consul](#consul)
+      - [Docker](#docker)
+      - [Logger](#logger)
+  - [Container registration](#container-registration)
+    - [Supported labels](#supported-labels)
+    - [Registration](#registration)
+    - [Deregistration](#deregistration)
+  - [Running E2E tests](#running-e2e-tests)
 
 <!-- tocstop -->
 
-## Running Con-tainer2sul
+## Running Container-to-Consul from source
 
-### Using Docker
-
+We provide a Docker Compose setup with [Consul](https://developer.hashicorp.com/consul) included. To run the project, you can use the following command:
 ```
-docker run -d \
-  -e c2c_consul__host=localhost \
-  -e c2c_consul__port=8500 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  vidiben/container2sul
+docker compose up -d --build --force-recreate
 ```
 
-### Configuration
+## Configuration
 
-Con-tainer2sul uses [rc](https://www.npmjs.com/package/rc) to import its configuration.
+Container-to-Consul uses [rc](https://www.npmjs.com/package/rc) to import its configuration.
 
 The configuration can be overridden using any method supported by rc, for instance using a custom `.c2crc` file or by defining some environmental variables prefixed by `c2c_`.
 
@@ -78,7 +72,7 @@ _.c2crc_
 
 #### Logger
 
-Con-tainer2sul uses [bunyan](https://github.com/trentm/node-bunyan). The `logger` section of the configuraton object is passed to `bunyan.createLogger` method.
+Container-to-Consul uses [bunyan](https://github.com/trentm/node-bunyan). The `logger` section of the configuraton object is passed to `bunyan.createLogger` method.
 
 Default configuration outputs logs at `info` level to `stdout`.
 
@@ -87,84 +81,82 @@ _.c2crc_
 {
   "[..]": "[..]",
   "logger": {
-    "name": "con-tainer2sul"
+    "name": "container-to-consul"
   }
 }
 ```
 
+
 ## Container registration
 
-Con-tainer2sul relies on [Docker labels](https://docs.docker.com/engine/userguide/labels-custom-metadata/) to define the values sent to Consul.
+Container-to-Consul relies on [Docker labels](https://docs.docker.com/engine/userguide/labels-custom-metadata/) to define the values sent to Consul.
 
-Internally, Con-tainer2sul calls Consul low-level [catalog/register](https://www.consul.io/docs/agent/http/catalog.html#catalog_register) and [catalog/deregister](https://www.consul.io/docs/agent/http/catalog.html#catalog_deregister) API endpoints.
+Internally, Container-to-Consul calls Consul low-level [catalog/register](https://www.consul.io/docs/agent/http/catalog.html#catalog_register) and [catalog/deregister](https://www.consul.io/docs/agent/http/catalog.html#catalog_deregister) API endpoints.
 
-### IP Address
+Container registration is an opt-in process. By default, Container-to-Consul will not register any container in Consul. To register a container the `consul.register` label must be set to `true`.
 
-By default, the registered ip address is the first one found in the `NetworkSettings` group from `docker inspect` result.
+### Supported labels
 
-If the container is running in `host` network mode, the ip address used is the `docker0` one.
+| Label | Description | Default |
+| --- | --- | --- |
+| `consul.register` | Marks a container for discovery | `false` |
+| `consul.ip` | The IP that will be registered as part of the service in Consul| first IP found in the `NetworkSettings` group from `docker inspect` result. If the container is running in `host` network mode, the ip address used is the `docker0` one. |
+| `consul.port` | The port that the service will be discovered on| `none` |
+| `consul.service` | The name of the service in Consul | `container name` |
+| `consul.tags` | The tags that will be added to the service in Consul | `[]` |
+| `consul.kv.<KEY>` | Key/Value pairs | `{}` |
 
-The registered ip address can be configured using a `consul.ip` label.
-
-```
-docker run --rm --name c2c -ti -l consul.ip=10.0.0.1 alpine ash
-```
-
-will register a service `c2c` on a node `c2c`, which will be registered to the ip `10.0.0.1`.
-
-By setting the `consul.ip` label to `host`, Con-tainer2sul will use `docker0` ip address for the node.
-
-### Service name
-
-By default, the registered service name is the container name.
-
-The service name can be configured using a `consul.service` label.
+### Registration
+Running;
 
 ```
-docker run --rm --name c2c -ti -l consul.service=myservice alpine ash
+docker run --name nginx -d \
+ -l consul.register=true \
+  -l consul.ip=10.0.0.1 \
+   -l consul.service=nginx \
+    -l consul.tags=www,api \
+     -l consul.port=80 \
+      -l consul.kv.foo=bar \
+       -l consul.kv.bar=baz \
+        nginx
 ```
 
-will register a service `myservice` in Consul.
+will register a service named `nginx` with
+- ip  `10.0.0.1`
+- tags `www` and `api`
+- port `80`
+- 2 key/value pairs under the `/services/nginx/` tree.
 
-### Tags
+You can check for the registered service in [Consul](http://localhost:8500/ui/dc1/services)
 
-Tags can be set using a `consul.tags` label, container the list of tags, comma separated.
+![Nginx Registered](./readme/nginx-registered.png)
 
-```
-docker run --rm --name c2c -ti -l consul.tags=www,api alpine ash
-```
+> For a complete usage example please [see](https://github.com/mekomsolutions/container-to-consul/blob/main/e2e/docker/docker-compose.yaml).
 
-will register a service `c2c` with `www` and `api` tags.
+### Deregistration
 
-### Port
+To deregister the container, you can simply stop it.
 
-For the time being, Con-tainer2sul support registering only one port.
-
-Port can be set using a `consul.port` label.
-
-```
-docker run --rm --name c2c -ti -l consul.port=80 alpine ash
+```bash
+docker stop nginx
 ```
 
-will register a service `c2c` on port 80.
+After this if you check [Consul](http://localhost:8500/ui/dc1/services) the service will be removed
 
-### Key/Value pairs
+![Nginx Deregistered](./readme/nginx-deregistered.png)
 
-Each container can be attached some key/value pairs, using the `consul.kv.<KEY>` template.
+You can then remove the container
 
-```
-docker run --rm --name c2c -ti -l consul.kv.foo=bar -l consul.kv.bar=baz alpine ash
-```
-
-will register a service `c2c` and create 2 key/value pairs under the `/services/c2c/` tree.2 key/value pairs under the `/services/c2c/` tree.
-
-
-### Skipping registration
-
-You can tell Con-tainer2sul to not register the container by using a `container.skip` label, set to anything else than `false`.
-
-```
-docker run --rm --name c2c -ti -l consul.skip=true ash
+```bash
+docker rm nginx
 ```
 
-will **not** register any node or service in Consul.
+**Note** : At the moment using force (`-f`) when removing a container will not deregister the service
+
+## Running E2E tests
+
+The project contains E2E tests written with [Playwright](https://playwright.dev/) and [Dockerode](https://github.com/apocas/dockerode). Any changes made to the project should be accompanied by E2E tests. To run the tests, you need to have Docker installed and running. Then, you can run the following command:
+
+```
+docker compose -f docker-compose-e2e.yaml -p container-to-consul-e2e up --build --force-recreate --abort-on-container-exit --exit-code-from playwright
+```

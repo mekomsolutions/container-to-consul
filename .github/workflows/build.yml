@@ -1,0 +1,19 @@
+name: Build and Publish Docker Image
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+jobs:
+  docker-publish:
+    uses: mekomsolutions/shared-github-workflow/.github/workflows/docker-build-publish.yml@main
+    with:
+      download-artifacts: false
+      image-name: "container-to-consul"
+    secrets:
+      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_REGISTRY_USERNAME }}
+      DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_REGISTRY_PASSWORD }}

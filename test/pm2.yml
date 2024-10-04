@@ -1,4 +1,0 @@
-apps:
-  - name: c2c
-    script: lib/index.js
-    watch: lib

@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  nginx:
+    image: nginx:1-alpine
+    labels:
+      - "consul.port=80"
+      - "consul.tags=nginx"
+      - "consul.service=nginx-register"
+      - "consul.ip=10.0.0.1"
+      - "consul.register=true"
+  nginx2:
+    image: nginx:1-alpine
+    labels:
+      - "consul.port=80"
+      - "consul.tags=nginx"
+      - "consul.ip=10.0.0.1"
+      - "consul.register=true"
+  nginx-ignore:
+    image: nginx:1-alpine

@@ -12,18 +12,18 @@ describe('consul', () => {
     Consul,
     consul,
     stubs = {
-      rq: sandbox.stub().resolves()
+      axios: sandbox.stub().resolves(true)
     };
 
   before(() => {
-    mockRequire('request-promise', stubs.rq);
+    mockRequire('axios', stubs.axios);
     Consul = require('../../../lib/consul');
   });
 
   beforeEach(() => {
     consul = new Consul({
       host: 'host',
-      port: 'port'
+      port: '80'
     });
   });
 
@@ -38,13 +38,13 @@ describe('consul', () => {
 
       return consul._send('method', '/uri?foo=bar', 'body')
         .then(() => {
-          should(stubs.rq)
+          should(stubs.axios)
             .be.calledOnce()
             .be.calledWithMatch({
+              baseURL: 'http://host:80',
               method: 'method',
-              uri: 'http://host:port/uri?foo=bar&token=acl',
-              json: true,
-              body: 'body'
+              url: '/uri?foo=bar&token=acl',
+              data: 'body'
             });
 
         });
@@ -57,12 +57,11 @@ describe('consul', () => {
 
       return consul._get('/uri')
         .then(() => {
-          should(stubs.rq)
+          should(stubs.axios)
             .be.calledOnce()
             .be.calledWithMatch({
               method: 'GET',
-              uri: 'http://host:port/uri?token=acl',
-              json: true
+              url: '/uri?token=acl'
             });
         });
     });

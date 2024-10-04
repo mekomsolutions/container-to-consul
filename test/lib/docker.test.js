@@ -37,7 +37,7 @@ describe('docker', () => {
         on: sinon.stub(),
         start: sinon.stub()
       },
-      c2c: {
+      containertoConsul: {
         config: {
           docker: {
             connectTimeout: 5000,
@@ -63,12 +63,12 @@ describe('docker', () => {
     Docker = require('../../lib/docker');
     mockRequire.reRequire('../../lib/docker');
 
-    docker = new Docker(stubs.c2c);
+    docker = new Docker(stubs.containertoConsul);
   });
 
   describe('#constructor', () => {
     it('should construct a proper object', () => {
-      should(docker.c2c).be.exactly(stubs.c2c);
+      should(docker.containertoConsul).be.exactly(stubs.containertoConsul);
       should(docker.docker0).be.exactly('172.17.0.1');
     });
   });
@@ -129,7 +129,7 @@ describe('docker', () => {
         .catch(e => {
           should(e).be.exactly(error);
 
-          should(docker.c2c.log.error)
+          should(docker.containertoConsul.log.error)
             .be.calledOnce()
             .be.calledWith(error);
         });
@@ -147,7 +147,7 @@ describe('docker', () => {
 
       disconnect();
 
-      should(docker.c2c.log.warn)
+      should(docker.containertoConsul.log.warn)
         .be.calledOnce()
         .be.calledWith('Disconnected from Docker. Reconnecting');
 

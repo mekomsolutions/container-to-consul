@@ -1,0 +1,27 @@
+services:
+  consul:
+    image: hashicorp/consul:1.19
+    ports:
+      - "8500:8500"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500"]
+  container-to-consul:
+    build: ./
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - consul
+    environment:
+      c2c_consul__host: consul
+  playwright:
+    build: 
+      dockerfile: ./playwright.Dockerfile
+    volumes:
+      - ./playwright.config.ts:/app/playwright.config.ts
+      - ./e2e:/app/tests
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - container-to-consul
+      - consul
+    command: yarn run playwright test
+
