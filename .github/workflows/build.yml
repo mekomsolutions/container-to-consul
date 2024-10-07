@@ -13,6 +13,7 @@ jobs:
     uses: mekomsolutions/shared-github-workflow/.github/workflows/docker-build-publish.yml@main
     with:
       download-artifacts: false
+      image-version: "latest"
       image-name: "container-to-consul"
     secrets:
       DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_REGISTRY_USERNAME }}
