@@ -1,0 +1,7 @@
+{
+    "require": [
+        "sinon-as-promised",
+        "should",
+        "should-sinon"
+    ]
+}
