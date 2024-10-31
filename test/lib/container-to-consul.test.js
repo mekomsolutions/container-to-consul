@@ -236,7 +236,7 @@ describe('container-to-consul', () => {
 
     it('should not fail if no docker/service-ids key is stored in consul', () => {
       var error = new Error('test');
-      error.statusCode = 404;
+      error.response = {status: 404};
 
       containertoConsul.consul.kv.keys.rejects(error);
 
