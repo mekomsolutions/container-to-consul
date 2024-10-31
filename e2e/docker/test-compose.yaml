@@ -8,6 +8,7 @@ services:
       - "consul.service=nginx-register"
       - "consul.ip=10.0.0.1"
       - "consul.register=true"
+      - "consul.meta=metrics_path='/metrics'"
   nginx2:
     image: nginx:1-alpine
     labels:
@@ -15,5 +16,6 @@ services:
       - "consul.tags=nginx"
       - "consul.ip=10.0.0.1"
       - "consul.register=true"
+      - "consul.meta=metrics_path=/metrics"
   nginx-ignore:
     image: nginx:1-alpine
