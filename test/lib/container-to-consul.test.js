@@ -420,6 +420,7 @@ describe('container-to-consul', () => {
             'consul.port': '8888 consul port',
             'consul.service': 'consul service',
             'consul.tags': 'consul,tags',
+            'consul.meta': 'key=value',
             'consul.register': 'true'
           }
         },
@@ -436,6 +437,7 @@ describe('container-to-consul', () => {
       should(result.Service.Service).be.exactly('consul service');
       should(result.Service.Port).be.exactly(8888);
       should(result.Service.Tags).match(['consul', 'tags']);
+      should(result.Service.Meta).match({key:'value'});
     });
 
     it('should not set the port if it does not manage to cast it to an int', () => {

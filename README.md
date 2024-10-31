@@ -104,6 +104,7 @@ Container registration is an opt-in process. By default, Container-to-Consul wil
 | `consul.port` | The port that the service will be discovered on| `none` |
 | `consul.service` | The name of the service in Consul | `container name` |
 | `consul.tags` | The tags that will be added to the service in Consul | `[]` |
+| `consul.meta` | The service [meta](https://developer.hashicorp.com/consul/api-docs/catalog#meta) as `key=value,key=value` | empty |
 | `consul.kv.<KEY>` | Key/Value pairs | `{}` |
 
 ### Registration
