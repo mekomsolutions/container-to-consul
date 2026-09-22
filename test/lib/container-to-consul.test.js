@@ -247,6 +247,18 @@ describe('container-to-consul', () => {
         });
     });
 
+    it('should not fail if consul kv keys is not an array', () => {
+      containertoConsul.consul.kv.keys.resolves({ data: ['test'], status: 200 });
+
+      return containertoConsul.start()
+        .then(() => {
+          should(containertoConsul.consul.kv.get)
+            .have.callCount(0);
+          should(containertoConsul.registerContainers)
+            .be.calledOnce();
+        });
+    });
+
     it('should reject the promise if consul kv throws an unexpected error', () => {
       var error = new Error('unexpected');
       containertoConsul.consul.kv.keys.rejects(error);

@@ -12,7 +12,7 @@ describe('consul', () => {
     Consul,
     consul,
     stubs = {
-      axios: sandbox.stub().resolves(true)
+      axios: sandbox.stub().resolves({ data: true })
     };
 
   before(() => {
@@ -37,7 +37,8 @@ describe('consul', () => {
       consul.acl = 'acl';
 
       return consul._send('method', '/uri?foo=bar', 'body')
-        .then(() => {
+        .then(data => {
+          should(data).be.exactly(true);
           should(stubs.axios)
             .be.calledOnce()
             .be.calledWithMatch({
@@ -47,6 +48,29 @@ describe('consul', () => {
               data: 'body'
             });
 
+        });
+    });
+
+    it('should return axios response.data', () => {
+      const keys = ['docker/service-ids/nginx'];
+      stubs.axios.resolves({ data: keys, status: 200 });
+
+      return consul._send('GET', '/v1/kv/docker/service-ids/?keys')
+        .then(data => {
+          should(data).eql(keys);
+        });
+    });
+
+    it('should parse JSON bodies and keep raw Consul KV values', () => {
+      return consul._send('GET', '/uri')
+        .then(() => {
+          const transform = stubs.axios.firstCall.args[0].transformResponse[0];
+
+          should(transform('["docker/service-ids/nginx"]'))
+            .eql(['docker/service-ids/nginx']);
+          should(transform('a66c884d114e25a47d6f2852d46c85a4b4718a97d6c243c153826f5de6498232'))
+            .eql('a66c884d114e25a47d6f2852d46c85a4b4718a97d6c243c153826f5de6498232');
+          should(transform('')).eql({});
         });
     });
   });
